@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import Ask from "@/components/Ask";
 import Landing from "@/components/Landing";
 import Oracle from "@/components/Oracle";
-import { ANSWER_COUNT, drawAnswer, type Draw } from "@/lib/answers";
+import { drawAnswer, type Draw } from "@/lib/answers";
 import type { Category } from "@/lib/categories";
 import { pageOf, recordReading } from "@/lib/record";
 
@@ -67,7 +67,7 @@ export default function Page() {
   return (
     <main className="stage">
       {step === "landing" && (
-        <Landing key="landing" total={ANSWER_COUNT} onPick={handlePick} />
+        <Landing key="landing" onPick={handlePick} />
       )}
 
       {step === "ask" && (

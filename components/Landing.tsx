@@ -9,11 +9,10 @@ import {
 import { stagger } from "@/lib/motion";
 
 type Props = {
-  total: number;
   onPick: (category: Category) => void;
 };
 
-export default function Landing({ total, onPick }: Props) {
+export default function Landing({ onPick }: Props) {
   return (
     <section className="screen landing" aria-labelledby="book-title">
       <p className="kicker rise" style={stagger(0)}>
@@ -60,7 +59,7 @@ export default function Landing({ total, onPick }: Props) {
       </div>
 
       <p className="colophon rise" style={stagger(5)}>
-        答案之书 · 藏书 {total} 条
+        答案之书 · 翻开即是此刻
       </p>
     </section>
   );

@@ -1008,15 +1008,6 @@ body::after {
   overflow: hidden;
 }
 
-.oracle__meta {
-  margin: 8px 0 0;
-  font-size: 11px;
-  font-family: var(--font-latin);
-  letter-spacing: 0.24em;
-  color: var(--ink-3);
-  text-align: center;
-}
-
 .oracle__actions {
   display: flex;
   align-items: center;
@@ -1565,10 +1556,6 @@ body {
   .oracle__echo {
     font-size: 12px;
     line-height: 1.6;
-  }
-
-  .oracle__meta {
-    margin-top: 4px;
   }
 
   .oracle__actions {

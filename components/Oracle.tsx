@@ -65,7 +65,7 @@ export default function Oracle({
             <span className="cover__lozenge" />
             <span className="cover__title">答案之书</span>
             <span className="cover__lozenge" />
-            <span className="cover__foot">共一千条神谕</span>
+            <span className="cover__foot">翻开即是答案</span>
           </div>
         </div>
       </div>
@@ -76,7 +76,6 @@ export default function Oracle({
 
       <div className="oracle__after" data-open={open}>
         <p className="oracle__echo">你问的是「{question}」</p>
-        <p className="oracle__meta">一千条中第 {answerIndex + 1} 条</p>
         <div className="oracle__actions">
           <button type="button" className="linkbtn" onClick={onRedraw}>
             再翻一次
