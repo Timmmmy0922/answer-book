@@ -2,6 +2,11 @@ name: Deploy to GitHub Pages
 
 # 推到 main 就自动重新部署。
 # 这一份只负责「把网页放到公网上」；资料库那边走 Supabase，与此无关。
+#
+# ⚠️ 提醒：GitHub Pages（*.github.io）在中国大陆打不开。
+#    这份 workflow 是给「海外访客」用的。
+#    如果要让国内访客免翻墙打开，请改用腾讯云 EdgeOne Pages 等方案，
+#    做法见 README 第 6 节。程式码本身不用改，静态导出是同一套。
 
 on:
   push:
@@ -20,6 +25,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      STATIC_EXPORT: "true"
+      BASE_PATH: "/answer-book"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,19 +42,26 @@ jobs:
         run: npm ci
 
       - name: 建置（静态导出）
-        env:
-          # 打开静态导出 + basePath=/answer-book
-          GITHUB_PAGES: "true"
-          # 这两个值本来就会打包进前端、谁都能看到，所以用 vars 而不是 secrets
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: 检查产物
         run: |
-          test -f out/index.html || { echo "out/index.html 不存在，静态导出没成功"; exit 1; }
+          set -e
+          test -f out/index.html || { echo "::error::out/index.html 不存在，静态导出没成功"; exit 1; }
           echo "导出成功，文件数：$(find out -type f | wc -l)"
-          grep -q "迷路的旅人" out/index.html && echo "页面文案检查通过"
+
+          grep -q "迷路的旅人" out/index.html && echo "✓ 页面文案"
+          grep -q "/answer-book/_next/" out/index.html && echo "✓ basePath 前缀"
+
+          test -f out/fonts/noto-serif-sc.css || { echo "::error::字体 CSS 没被导出"; exit 1; }
+          echo "✓ 自托管字体：$(find out/fonts -name '*.woff2' | wc -l) 个切片"
+
+          # 关键防线：产物里绝对不能再出现 Google 的域名，否则国内访客会卡在这里
+          if grep -rlE "fonts\.(googleapis|gstatic)\.com" out/ ; then
+            echo "::error::产物里还有 Google Fonts 连线，国内会打不开"
+            exit 1
+          fi
+          echo "✓ 产物内无任何 Google Fonts 连线"
 
       - name: 关掉 Jekyll
         run: touch out/.nojekyll

@@ -31,17 +31,16 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        {/* 载入失败也不影响：CSS 里有宋体回退栈 */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&display=swap"
-          rel="stylesheet"
-        />
+        {/*
+          字体全部托管在自己的 public/fonts/ 下，访客不会连到 fonts.googleapis.com
+          —— 那个域名在中国大陆打不开，一连就会退回系统宋体、排版走样。
+
+          这里故意用「相对路径」而不是 /fonts/...：
+          GitHub Pages 的网址带子路径（/answer-book/），相对路径在
+          根目录和子路径下都能正确解析，不用为两套环境写两份。
+        */}
+        <link rel="stylesheet" href="fonts/noto-serif-sc.css" />
+        <link rel="stylesheet" href="fonts/cormorant-garamond.css" />
       </head>
       <body>{children}</body>
     </html>

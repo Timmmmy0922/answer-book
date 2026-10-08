@@ -2,9 +2,11 @@
 
 > 迷路的旅人啊，在此处与答案之书链接，解开你心中的困惑吧。
 
-**線上網址：<https://timmmmy0922.github.io/answer-book/>** ← 任何裝置、任何地方打開就能用
+**線上網址：<https://timmmmy0922.github.io/answer-book/>** ← 海外任何裝置都能開
 
-一個用 **Next.js + Supabase** 做的答案之書網頁，部署在 **GitHub Pages**（也可以改接 Vercel）。三個界面、一千條神諭，後台看得到每一位旅人選了什麼、問了什麼、翻到哪一頁。
+> ⚠️ **這個網址在中國大陸打不開**（`*.github.io` 被牆）。要讓國內訪客免翻牆使用，看第 6 節——需要自己的網域＋騰訊雲 EdgeOne Pages，程式碼已經為此準備好，不用改任何一行。
+
+一個用 **Next.js + Supabase** 做的答案之書網頁。純靜態，可放任何靜態空間（目前掛在 GitHub Pages）。三個界面、一千條神諭，後台看得到每一位旅人選了什麼、問了什麼、翻到哪一頁。
 
 網站上的所有文字（含標題、選項、按鈕、一千條答案）都是**简体中文**。手機端做過真機視窗驗證：iPhone 14 / Android / iPhone SE 320px / 橫屏 / 平板都檢查過，沒有橫向溢出。
 
@@ -64,6 +66,11 @@
 ├─ supabase/
 │  ├─ schema.sql          建表 + 權限（複製到 Supabase SQL Editor 執行）
 │  └─ queries.sql         後台常用查詢
+├─ public/
+│  └─ fonts/              自托管字体（Noto Serif SC + Cormorant Garamond）
+│     ├─ noto-serif-sc.css    @font-face 规则，内无任何外部连线
+│     ├─ noto-serif-sc/       101 个 woff2 切片，可变字重 300–900
+│     └─ cormorant-garamond/  10 个 woff2 切片
 ├─ scripts/
 │  └─ check-supabase.mjs  連線自檢（寫入測試 + 確認前端讀不到）
 ├─ .github/
@@ -72,6 +79,8 @@
 ├─ start-dev.bat          雙擊就能在本機跑起來（給不熟終端機的人）
 └─ .env.example           環境變數範本
 ```
+
+> **字型為什麼放在自己家？** `fonts.googleapis.com` 在中國大陸打不開。放在 `public/fonts/` 之後，訪客完全不會連到 Google。workflow 裡還有一道防線：只要產物中出現 `fonts.googleapis.com` 或 `fonts.gstatic.com`，建置就會直接失敗，避免哪天不小心又加回去。
 
 ---
 
@@ -190,15 +199,30 @@ node scripts/check-supabase.mjs
 
 **本機跑的 `npm run dev` 只有你自己看得到。** 別人要能開，就得放上公網。
 
-### 6-1 現況：已經部署在 GitHub Pages 上了
+### 6-0 ⚠️ 先講清楚：免費的西方主機，國內打不開
+
+這件事沒有技術手段可以繞過，先把事實攤開：
+
+| 主機 | 免費子網域 | 中國大陸 |
+| --- | --- | --- |
+| **GitHub Pages** | `*.github.io` | **打不開**（長期被封） |
+| **Vercel** | `*.vercel.app` | **打不開**（官方文件自己說「可能載入很慢或失敗」） |
+| **Netlify** | `*.netlify.app` | 不穩定，多數打不開 |
+| **Cloudflare Pages** | `*.pages.dev` | 時通時不通，速度差；想改善得自己搞「優選 IP」，但那是違反 Cloudflare 條款的偏方 |
+
+所以要讓**國內訪客免翻牆**打開，避免不了兩件事：**一個自己的網域**，以及第 6-2 節的三選一。
+
+> 好消息是：字型已經全部託管在自己的網站上，網頁本身**不會連任何被牆的第三方**。所以只要主機國內連得到，網站就完全正常。
+
+### 6-1 目前：GitHub Pages（給海外訪客／你自己驗收用）
 
 網站網址：**https://timmmmy0922.github.io/answer-book/**
 
-這個網址是全世界的。手機用行動網路、別人在別的國家、對方什麼都不用裝，打開就能用。資料統一進同一個 Supabase，你在同一個後台看到所有人的提問。
+這個網址全世界都能開，但**國內打不開**。先留著，方便你自己隨時看最新版本。
 
 **運作方式**：`.github/workflows/deploy.yml`。每次你 `git push` 到 `main`，GitHub 會自動重新建置並發佈，一到兩分鐘後生效，網址不變。
 
-**為什麼是靜態匯出**：GitHub Pages 只放靜態檔案，所以 workflow 裡會把 `GITHUB_PAGES=true`，`next.config.mjs` 偵測到這個變數才會打開 `output: "export"` 並把 `basePath` 設成 `/answer-book`（因為網址帶子路徑）。**本機開發不受影響**，`npm run dev` 依然是 `http://localhost:3000`。
+**為什麼是靜態匯出**：GitHub Pages 只放靜態檔案，所以 workflow 設 `STATIC_EXPORT=true`、`BASE_PATH=/answer-book`，`next.config.mjs` 偵測到才會打開 `output: "export"`。**本機開發不受影響**，`npm run dev` 依然是 `http://localhost:3000`（不帶子路徑）。
 
 **那兩個環境變數放在哪**：不在 `.env.local`，而是在 GitHub repo 的 Actions variables 裡：
 
@@ -208,7 +232,66 @@ gh variable list --repo 你的帳號/answer-book
 
 要改就 `gh variable set 變數名 --body "值" --repo 你的帳號/answer-book`，然後重新跑一次 workflow（或 push 一個 commit）。
 
-### 6-2 日常更新流程
+### 6-2 要讓國內免翻牆打開 — 三個方案
+
+#### 方案 A：騰訊雲 EdgeOne Pages ＋ 自己的網域 ⭐ 推薦（免備案）
+
+騰訊自家產品，官方定位就是「Vercel 的中國替代方案」。**程式碼完全不用改**，它認得 `out/` 這個靜態目錄。
+
+1. 買一個網域（`.top` / `.xyz` 一年約 ¥10–30；國外註冊商如 Cloudflare Registrar、Namecheap 都可以，不必實名）。
+2. 到 <https://console.cloud.tencent.com/edgeone/makers> 開通 EdgeOne Pages（要實名認證，這是騰訊雲的硬性要求）。
+3. 建專案 → **匯入 Git 倉庫** → 選你的 `answer-book`。
+4. 建置設定：
+   - **建置指令**：`npm run build`
+   - **輸出目錄**：`out`
+   - **環境變數**：`STATIC_EXPORT` = `true`、`BASE_PATH` = **留空**（重點：用自訂網域時網址在根目錄，不能加 `/answer-book`），再加上兩個 `NEXT_PUBLIC_SUPABASE_*`
+5. **加速區域選「全球可用區（不含中國大陸）」** → 這一項**不需要工信部備案**，走香港與海外節點，國內可直連。
+6. 綁定你的網域，等憑證簽發完就好了。
+
+> **為什麼不選「中國大陸可用區」？** 那需要工信部備案（1–3 週、要實名、要國內主體）。想追求國內最快速度就走去備案；一般玩玩選「不含中國大陸」就夠。
+>
+> ⚠️ **EdgeOne Pages 免費版不能用系統配的 `*.edgeone.app` 預覽連結給國內訪客**（騰訊官方文件寫得很明）：選含大陸的區域時那個連結只有 **3 小時**有效、過期回 401；選不含大陸的區域時，國內網路環境訪問會直接 **401**。所以**一定要綁自己的網域**。
+
+#### 方案 B：域名備案 ＋ 國內雲（速度最快、最正規）
+
+適合打算長期經營、在意國內速度的情況：
+
+- 騰訊雲 EdgeOne Pages 加速區域選「**中國大陸可用區**」，或
+- 阿里雲 OSS 靜態託管 ＋ CDN，或
+- 騰訊雲 CloudBase 靜態託管
+
+代價：域名要完成**工信部備案**（約 1–3 週，需實名、需國內主體），主機也要實名。
+
+#### 方案 C：香港／境外輕量伺服器 ＋ 域名（免備案，但要自己管機器）
+
+阿里雲香港輕量、騰訊雲香港 CVM 之類，一年幾百塊，域名不用備案。比方案 A 麻煩，除非你本來就想有一台伺服器。
+
+### 6-3 不管放哪裡，程式碼都是同一套
+
+這本答案之書是**純靜態**的——1000 條答案都在前端 `data/answers.json`，翻書抽籤全在瀏覽器完成，只有「記一筆到後台」才連 Supabase。所以任何靜態空間都能放。
+
+`next.config.mjs` 用兩個環境變數控制：
+
+| 環境變數 | 作用 |
+| --- | --- |
+| `STATIC_EXPORT=true` | 打開靜態匯出（產物在 `out/`）；不設就是正常的 Next.js 伺服器模式 |
+| `BASE_PATH=/xxx` | 網址帶子路徑時才要設；用自訂網域（根目錄）就留空 |
+
+| 平台 | `STATIC_EXPORT` | `BASE_PATH` |
+| --- | --- | --- |
+| 本機 `npm run dev` | 不設 | 不設 |
+| GitHub Pages | `true` | `/answer-book` |
+| EdgeOne Pages（自訂網域） | `true` | 留空 |
+| 阿里雲 OSS / 七牛 | `true` | 留空 |
+| Vercel | 不設 | 不設 |
+
+想在本機先試靜態匯出：
+
+```powershell
+$env:STATIC_EXPORT="true"; $env:BASE_PATH=""; npm run build   # 產物在 out/
+```
+
+### 6-4 日常更新流程
 
 ```bash
 git add -A
@@ -223,9 +306,9 @@ gh run list --limit 3
 gh run watch
 ```
 
-### 6-3 想換成 Vercel（可選）
+### 6-5 改成 Vercel（可選）
 
-GitHub Pages 的網址帶一個 `/answer-book/` 子路徑。如果你想要更乾淨的 `https://answer-book-xxx.vercel.app` 或綁自己的網域，可以另外接到 Vercel——兩邊可以並存，不衝突：
+Vercel 在國內不穩，但如果你只是要給海外朋友看、或想要更乾淨的網址，還是可以接：
 
 1. 到 <https://vercel.com> 用 GitHub 帳號登入。
 2. **Add New… → Project** → 選 `answer-book` → **Import**。
@@ -240,9 +323,7 @@ GitHub Pages 的網址帶一個 `/answer-book/` 子路徑。如果你想要更�
    **三個環境（Production / Preview / Development）都勾。**
 5. 按 **Deploy**。
 
-> ⚠️ 在 Vercel 上**不要**設 `GITHUB_PAGES=true`，那個變數是給 GitHub Pages 用的。Vercel 走正常的 Next.js 模式，網址是根目錄。
->
-> 反過來說：`GITHUB_PAGES` 只存在於 workflow 裡，Vercel 從來不會看到它，所以不會打架。
+> ⚠️ 在 Vercel 上**不要**設 `STATIC_EXPORT` 或 `BASE_PATH`。Vercel 走正常的 Next.js 模式，網址在根目錄。那兩個變數只存在於 GitHub workflow 裡，不會互相打架。
 
 ---
 
@@ -288,7 +369,7 @@ Supabase → 左側 **Table Editor** → 選 `readings`。
 | 輸入框上面的文案 | `components/Ask.tsx` 的 `ask__title` 與 `ask__hint` |
 | 一千條答案 | `data/answers.json`，一行一條，改完存檔即可 |
 | 顏色 | `app/globals.css` 最上面的 `:root`，全部是 CSS 變數 |
-| 字體 | `app/layout.tsx` 的 Google Fonts `<link>`，以及 `globals.css` 的 `--font-serif` |
+| 字體 | 字型檔在 `public/fonts/`，引用在 `app/layout.tsx` 的兩個 `<link>`；字型堆疊在 `globals.css` 的 `--font-serif` |
 | 動畫速度 | `globals.css` 的 `--ease-out` / `--ease-inout`，以及各處的秒數 |
 
 改答案庫時注意：`data/answers.json` 必須是**合法的 JSON 陣列**（每一行有引號、有逗號，最後一條不要逗號），而且**條數不限**——首頁會自動顯示正確的藏書數量。
@@ -325,7 +406,11 @@ node -e "const a=require('./data/answers.json'); console.log('共', a.length, '�
 目前刻意不做（你選了用 Dashboard 看）。之後要加的話，在 Vercel 加一個 `ADMIN_PASSWORD` 環境變數，寫一個 `app/admin/page.tsx` 在**伺服器端**用 `service_role` key 查詢即可——切記 `service_role` 只能出現在伺服器端程式碼裡。
 
 **Q：字體在中國大陸載不出來？**
-Google Fonts 會被牆。CSS 裡的 `--font-serif` 已經排了 `<宋体>` 這類系統字型在後面，所以會自動退回系統宋體，版面不會壞。想完全自己掌控字體，把字型檔放進 `public/fonts/`，用 `next/font/local` 載入。
+**已經處理好了，不需要你再做任何事。** 字型檔（Noto Serif SC ＋ Cormorant Garamond，共 111 個 woff2 切片、約 6MB）全部放在 `public/fonts/` 底下自己託管，訪客**完全不會**連到 `fonts.googleapis.com`。workflow 還有一道防線：產物中若出現 `fonts.googleapis.com` 或 `fonts.gstatic.com`，建置直接失敗。
+
+瀏覽器只會下載「畫面上真的用到的字」所在的切片（實測首頁只載入 12/121 個 face），所以不會拖慢速度。CSS 裡也仍然保留 `宋体 / SimSun` 這類系統字型在堆疊後方，萬一字型檔沒載到，版面也不會壞。
+
+要把字型換掉或重新抓，改 `app/layout.tsx` 的 `<link>` 指向你自己的 CSS 即可。
 
 ---
 
