@@ -20,6 +20,9 @@ next-env.d.ts
 /.npm-cache/
 /.pnpm-store/
 
+# 本机工具（截图用的浏览器自动化，不进版控）
+/.dsh-tools/
+
 # misc
 .DS_Store
 *.pem
