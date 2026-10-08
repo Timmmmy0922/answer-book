@@ -19,6 +19,10 @@ export const viewport: Viewport = {
   themeColor: "#F4EAD9",
   width: "device-width",
   initialScale: 1,
+  // 让 env(safe-area-inset-*) 在刘海屏 / 挖孔屏上真的拿得到值
+  viewportFit: "cover",
+  // 允许用户缩放（无障碍），但默认不放大
+  maximumScale: 5,
 };
 
 export default function RootLayout({

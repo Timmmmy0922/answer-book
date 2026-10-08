@@ -76,9 +76,7 @@ export default function Oracle({
 
       <div className="oracle__after" data-open={open}>
         <p className="oracle__echo">你问的是「{question}」</p>
-        <p className="oracle__meta">
-          一千条中第 {answerIndex + 1} 条 · 第 {pageNumber} 页
-        </p>
+        <p className="oracle__meta">一千条中第 {answerIndex + 1} 条</p>
         <div className="oracle__actions">
           <button type="button" className="linkbtn" onClick={onRedraw}>
             再翻一次

@@ -1,0 +1,66 @@
+name: Deploy to GitHub Pages
+
+# 推到 main 就自动重新部署。
+# 这一份只负责「把网页放到公网上」；资料库那边走 Supabase，与此无关。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 建置（静态导出）
+        env:
+          # 打开静态导出 + basePath=/answer-book
+          GITHUB_PAGES: "true"
+          # 这两个值本来就会打包进前端、谁都能看到，所以用 vars 而不是 secrets
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: 检查产物
+        run: |
+          test -f out/index.html || { echo "out/index.html 不存在，静态导出没成功"; exit 1; }
+          echo "导出成功，文件数：$(find out -type f | wc -l)"
+          grep -q "迷路的旅人" out/index.html && echo "页面文案检查通过"
+
+      - name: 关掉 Jekyll
+        run: touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

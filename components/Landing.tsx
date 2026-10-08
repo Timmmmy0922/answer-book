@@ -23,7 +23,9 @@ export default function Landing({ total, onPick }: Props) {
       <h1 className="title rise" id="book-title" style={stagger(1)}>
         <span className="title__lead">迷路的旅人啊，</span>
         <span className="title__rest">
-          在此处与答案之书链接，解开你心中的困惑吧
+          在此处与答案之书链接，
+          <br />
+          解开你心中的困惑吧
         </span>
       </h1>
 

@@ -1128,3 +1128,456 @@ body::after {
     opacity: 1;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   移动端与触控适配
+   —— 这一层放在最后，用来覆盖上面的桌面规则。
+      手机浏览器有四个坑，在桌面上完全看不到：
+
+        1. iOS 上 `background-attachment: fixed` 会失效并拖慢滚动
+        2. 触屏没有「移开鼠标」，:hover 会在点完之后一直卡住
+        3. 地址栏与底部手势条会吃掉 100vh，所以要 dvh + safe-area
+        4. 软键盘弹出来会盖住输入框和按钮
+
+      另外还顺手把低端机的入场动画减负了一档。
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* 明确声明浅色，避免手机浏览器自作主张反色表单控件 */
+  color-scheme: light;
+}
+
+/* — 1. 高度：用 dvh，并给不支持的浏览器留 vh 兜底 — */
+.stage {
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* 刘海 / 挖孔 / 底部手势条 */
+  padding-top: max(clamp(30px, 6vw, 74px), env(safe-area-inset-top));
+  padding-bottom: max(clamp(30px, 6vw, 74px), env(safe-area-inset-bottom));
+  padding-left: max(clamp(20px, 5vw, 48px), env(safe-area-inset-left));
+  padding-right: max(clamp(20px, 5vw, 48px), env(safe-area-inset-right));
+}
+
+/* — 2. 滚动与回弹 — */
+body {
+  /* iOS 上 fixed 背景不生效，还会让整页重绘 */
+  background-attachment: scroll;
+  -webkit-tap-highlight-color: transparent;
+  /* 防止翻书翻到一半被「下拉刷新」打断，情绪会断 */
+  overscroll-behavior-y: none;
+}
+
+/* — 3. 触控：没有 hover 的设备，别让 hover 样式粘住 — */
+.tile,
+.btn,
+.linkbtn,
+.chip,
+.ask__input {
+  /* 去掉移动端双击缩放那 300ms 的点击延迟 */
+  touch-action: manipulation;
+}
+
+.tile,
+.btn,
+.linkbtn,
+.chip {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .tile:hover {
+    transform: none;
+    border-color: var(--paper-3);
+    box-shadow: var(--shadow-s);
+  }
+
+  .tile:hover::before {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+
+  .tile:hover::after {
+    transform: translateX(-70%);
+    opacity: 0;
+  }
+
+  .btn--ghost:hover,
+  .btn--ghost:focus-visible {
+    border-color: var(--paper-3);
+    color: var(--ink-1);
+    background: transparent;
+  }
+
+  .btn--ink:hover:not(:disabled),
+  .btn--ink:focus-visible:not(:disabled) {
+    transform: none;
+    box-shadow: var(--shadow-s);
+  }
+
+  .btn--ink:hover:not(:disabled)::after {
+    transform: translateX(-72%);
+  }
+
+  .linkbtn:hover,
+  .linkbtn:focus-visible {
+    color: var(--ink-1);
+  }
+
+  .linkbtn:hover::after,
+  .linkbtn:focus-visible::after {
+    transform: scaleX(0);
+  }
+
+  /* 触屏改用 :active 给即时反馈 */
+  .tile:active {
+    transform: scale(0.972);
+    border-color: rgba(176, 138, 52, 0.62);
+    box-shadow: var(--shadow-m);
+    transition-duration: 0.12s;
+  }
+
+  .btn--ink:active:not(:disabled) {
+    box-shadow: inset 0 0 0 1px rgba(217, 186, 108, 0.9);
+  }
+}
+
+/* — 4. 软键盘：别让键盘盖住输入框 — */
+.ask__input {
+  /* 键盘弹起时浏览器会把聚焦元素滚进视野，留出这段余量就不会贴着键盘 */
+  scroll-margin-block: 16vh 44vh;
+}
+
+/* — 5. 手机上的入场动画减负：去掉 blur，低端机更顺 — */
+@media (max-width: 820px) {
+  .screen {
+    animation-name: screen-in-lite;
+    animation-duration: 0.6s;
+  }
+
+  .rise {
+    animation-name: rise-lite;
+    animation-duration: 0.6s;
+  }
+}
+
+@keyframes screen-in-lite {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise-lite {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* — 6. 窄屏细节 — */
+@media (max-width: 560px) {
+  /* 正文 17px > 16px，iOS 不会因为聚焦而自动放大整页 */
+  .ask__input {
+    font-size: 17px;
+  }
+
+  /* 手指最小可点区 */
+  .linkbtn {
+    min-height: 46px;
+    padding: 12px 8px;
+  }
+
+  .oracle__actions {
+    gap: 24px;
+  }
+
+  .oracle__echo {
+    max-width: 100%;
+  }
+
+  /* 底部手势条留白 */
+  .oracle__actions {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* — 7. 横屏手机（高度很矮）：把整套缩一号，别让它变成上下滚动地狱 — */
+@media (orientation: landscape) and (max-height: 560px) {
+  .stage {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .title {
+    font-size: clamp(20px, 3.2vw, 30px);
+    margin-top: 10px;
+  }
+
+  .title__rest {
+    margin-top: 0.2em;
+  }
+
+  .rule {
+    margin: 12px 0 14px;
+  }
+
+  .chooser {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .tile {
+    aspect-ratio: 3 / 2.9;
+    gap: 6px;
+    padding: 8px 6px;
+  }
+
+  .tile:last-child {
+    grid-column: auto; /* 抵销窄屏那条 span 2 */
+  }
+
+  .tile__label {
+    writing-mode: vertical-rl;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+  }
+
+  .tile__gloss,
+  .colophon {
+    display: none;
+  }
+
+  .ask__title {
+    font-size: 20px;
+    margin-top: 8px;
+  }
+
+  .ask__hint {
+    display: none;
+  }
+
+  .ask__input {
+    min-height: 120px;
+  }
+
+  .book {
+    --bw: min(24vw, 62vh);
+  }
+}
+
+/* — 8. 书封翻页：淡出必须在转过 90° 之前结束 — */
+/* 封面绕书脊转到 90° 时会被 backface-visibility 收掉，
+   如果那时还有残影，iOS 上会看到「啪」一下的突兀消失。 */
+.cover {
+  transition: transform 1.55s var(--ease-inout), opacity 0.4s ease 0.36s;
+}
+
+/* 允许复选答案文字，但别让长按弹出系统菜单打断翻书 */
+.book {
+  -webkit-touch-callout: none;
+}
+
+.page__answer {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   移动端第二轮修正 —— 这一轮是拿真机视窗截图看过之后改的
+   ═══════════════════════════════════════════════════════════════ */
+
+/* — 1. 五个方向：手机上改成整排列表 —
+   原来「2 列 + 最后一个跨 2 格」的写法，会让「整体运势」变成
+   一个 335×190 的大空盒子，看起来像坏了。 */
+@media (max-width: 600px) {
+  .chooser {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .tile {
+    aspect-ratio: auto;
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+    min-height: 68px;
+    padding: 18px 20px;
+  }
+
+  .tile:last-child {
+    grid-column: auto; /* 抵销窄屏那条 span 2 */
+  }
+
+  .tile::before {
+    inset: 6px;
+  }
+
+  .tile__num {
+    font-size: 14px;
+  }
+
+  .tile__label {
+    font-size: 19px;
+    letter-spacing: 0.2em;
+  }
+}
+
+/* — 2. 停用状态的「提问」不该变成一块灰砖 —
+   opacity: .4 会把深墨按钮压成脏灰色，看起来像坏掉而不是「还没轮到你」。
+   改成收敛的纸色 + 浅字，读起来是「先写下问题」。 */
+.btn--ink:disabled {
+  opacity: 1;
+  background-image: none;
+  background-color: rgba(74, 64, 52, 0.07);
+  border-color: var(--paper-3);
+  color: var(--ink-3);
+  box-shadow: none;
+}
+
+.btn--ink:disabled::after {
+  display: none;
+}
+
+/* — 3. 手机上「返回」在上、「提问」在下 —
+   原本用 column-reverse，视觉顺序和文案顺序是反的；而且主按钮放底部更好按。 */
+@media (max-width: 560px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  /* 主按钮更厚一点，拇指按得准 */
+  .btn--ink {
+    min-height: 56px;
+  }
+}
+
+/* — 4. 书本在手机上再放大一档，答案字也大一档 —
+   原来 60vw 太小，一页书只占屏幕中间一小块，气势不够。 */
+@media (max-width: 560px) {
+  .book {
+    --bw: min(74vw, 320px);
+  }
+
+  .page__answer {
+    font-size: 21px;
+    line-height: 1.74;
+  }
+
+  /* 给竖排印章腾出位置，避免和长句撞上 */
+  .page__body {
+    padding-bottom: 48px;
+  }
+}
+
+/* — 5. 书页侧边：条纹改成平滑渐变 —
+   原来用 repeating-linear-gradient 画「一叠纸」，但那条边只有约 2.6px 宽，
+   比条纹本身还窄，于是采样出摩尔纹，看起来像一条拉链。
+   改成上下的柔和明暗，读起来才像书口。 */
+.book__edges {
+  inset: 2% -1.1% 2.4% 1.8%;
+  background-image: linear-gradient(
+    to bottom,
+    #f8f2e4 0%,
+    #e5d8bd 11%,
+    #f1e7d4 50%,
+    #e5d8bd 89%,
+    #f8f2e4 100%
+  );
+  opacity: 1;
+}
+
+/* — 6. 印章改成竖排四字的长方印 —
+   原来 30×30 的方框塞四字会折成 2×2，挤在一起认不出来。 */
+.page__seal {
+  width: 22px;
+  height: 56px;
+  padding: 3px 0;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+/* — 7. 手机上的列表编号要排成一条竖线 —
+   编号和文字一起居中，会让五个编号横向参差（「爱情」两个字、
+   「整体运势」四个字，宽度不一样）。把编号拎出来靠左绝对定位，
+   文字保持居中，编号就对齐了。 */
+@media (max-width: 600px) {
+  .tile {
+    gap: 0;
+  }
+
+  .tile__num {
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   横屏手机收尾
+   —— 截图实测发现：844×390 时书是 203×281，答案排成 4 行，
+      撞到右下角的印章。这里把整套重新配比。
+   ═══════════════════════════════════════════════════════════════ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .book {
+    --bw: min(26vw, 52vh);
+    aspect-ratio: 3 / 3.7; /* 横屏有横向空间，书可以矮胖一点 */
+  }
+
+  .book-stage {
+    padding: 0 0 6px;
+  }
+
+  .page__answer {
+    font-size: 15px;
+    line-height: 1.62;
+  }
+
+  .page__body {
+    padding: 6px 4px 10px;
+  }
+
+  /* 这么小的页面上，印章只会碍事 */
+  .page__seal {
+    display: none;
+  }
+
+  .oracle__murmur {
+    margin-top: 2px;
+    font-size: 11px;
+  }
+
+  .oracle__after {
+    margin-top: 2px;
+  }
+
+  .oracle__echo {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .oracle__meta {
+    margin-top: 4px;
+  }
+
+  .oracle__actions {
+    margin-top: 6px;
+  }
+
+  .linkbtn {
+    min-height: 40px;
+    padding: 8px 6px;
+  }
+}
+
