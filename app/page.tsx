@@ -50,12 +50,6 @@ export default function Page() {
     [category, log]
   );
 
-  const handleRedraw = useCallback(() => {
-    const d = drawAnswer(draw?.index);
-    setDraw(d);
-    log(d, category, question);
-  }, [category, draw?.index, log, question]);
-
   /** 「回到最初」是真的重来一遍，草稿也一并清掉 */
   const handleHome = useCallback(() => {
     setStep("landing");
@@ -89,7 +83,6 @@ export default function Page() {
           answer={draw.text}
           answerIndex={draw.index}
           pageNumber={pageOf(draw.index)}
-          onRedraw={handleRedraw}
           onHome={handleHome}
         />
       )}

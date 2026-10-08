@@ -9,7 +9,6 @@ type Props = {
   answer: string;
   answerIndex: number;
   pageNumber: number;
-  onRedraw: () => void;
   onHome: () => void;
 };
 
@@ -19,7 +18,6 @@ export default function Oracle({
   answer,
   answerIndex,
   pageNumber,
-  onRedraw,
   onHome,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -76,10 +74,10 @@ export default function Oracle({
 
       <div className="oracle__after" data-open={open}>
         <p className="oracle__echo">你问的是「{question}」</p>
+        {/* 故意不提供「再翻一次」。
+            能重抽，就等于承认这一页是随机抽出来的 —— 那命运的唯一性就没了。
+            翻到哪一页就是哪一页。想再问，只能从头走一次。 */}
         <div className="oracle__actions">
-          <button type="button" className="linkbtn" onClick={onRedraw}>
-            再翻一次
-          </button>
           <button type="button" className="linkbtn" onClick={onHome}>
             回到最初
           </button>

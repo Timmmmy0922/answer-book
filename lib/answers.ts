@@ -21,26 +21,16 @@ function randomInt(max: number): number {
 }
 
 /**
- * 从答案库里随机抽一条。
- * 传入上一次的序号，可以避免连续两次抽到同一句。
+ * 替来的人翻一页。
+ *
+ * 抽中哪一页就是哪一页 —— 不重抽、不回避、不做任何「避免重复」的处理。
+ * 那是答案之书的规矩：命运只给一次，能重来的就不叫答案了。
  */
-export function drawAnswer(excludeIndex?: number): Draw {
-  const total = ANSWERS.length;
-
-  if (total === 0) {
+export function drawAnswer(): Draw {
+  if (ANSWERS.length === 0) {
     return { text: "答案之书今日合着，改日再来。", index: 0 };
   }
 
-  let index = randomInt(total);
-
-  if (total > 1 && excludeIndex !== undefined && excludeIndex >= 0) {
-    let guard = 0;
-    while (index === excludeIndex && guard < 16) {
-      index = randomInt(total);
-      guard += 1;
-    }
-    if (index === excludeIndex) index = (index + 1) % total;
-  }
-
+  const index = randomInt(ANSWERS.length);
   return { text: ANSWERS[index], index };
 }
