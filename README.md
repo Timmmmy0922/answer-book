@@ -2,9 +2,11 @@
 
 > 迷路的旅人啊，在此处与答案之书链接，解开你心中的困惑吧。
 
-一個用 **Next.js + Vercel + Supabase** 做的答案之書網頁。三個界面、一千條神諭，後台看得到每一位旅人選了什麼、問了什麼、翻到哪一頁。
+**線上網址：<https://timmmmy0922.github.io/answer-book/>** ← 任何裝置、任何地方打開就能用
 
-網站上的所有文字（含標題、選項、按鈕、一千條答案）都是**简体中文**。
+一個用 **Next.js + Supabase** 做的答案之書網頁，部署在 **GitHub Pages**（也可以改接 Vercel）。三個界面、一千條神諭，後台看得到每一位旅人選了什麼、問了什麼、翻到哪一頁。
+
+網站上的所有文字（含標題、選項、按鈕、一千條答案）都是**简体中文**。手機端做過真機視窗驗證：iPhone 14 / Android / iPhone SE 320px / 橫屏 / 平板都檢查過，沒有橫向溢出。
 
 ---
 
@@ -15,7 +17,7 @@
 3. [本機先跑起來](#3-本機先跑起來)
 4. [建 Supabase 後台](#4-建-supabase-後台)
 5. [接上金鑰](#5-接上金鑰)
-6. [部署到 Vercel](#6-部署到-vercel)
+6. [部署（讓任何人都能打開）](#6-部署讓任何人都能打開)
 7. [後台怎麼看用戶選了什麼、問了什麼](#7-後台怎麼看用戶選了什麼問了什麼)
 8. [想改東西的話](#8-想改東西的話)
 9. [常見問題](#9-常見問題)
@@ -64,6 +66,10 @@
 │  └─ queries.sql         後台常用查詢
 ├─ scripts/
 │  └─ check-supabase.mjs  連線自檢（寫入測試 + 確認前端讀不到）
+├─ .github/
+│  └─ workflows/
+│     └─ deploy.yml       push 到 main 就自動部署到 GitHub Pages
+├─ start-dev.bat          雙擊就能在本機跑起來（給不熟終端機的人）
 └─ .env.example           環境變數範本
 ```
 
@@ -180,39 +186,63 @@ node scripts/check-supabase.mjs
 
 ---
 
-## 6. 部署到 Vercel
+## 6. 部署（讓任何人都能打開）
 
-### 6-1 推上 GitHub
+**本機跑的 `npm run dev` 只有你自己看得到。** 別人要能開，就得放上公網。
 
-在專案根目錄：
+### 6-1 現況：已經部署在 GitHub Pages 上了
 
-```bash
-git init
-git add .
-git commit -m "答案之书"
-git branch -M main
-git remote add origin https://github.com/你的帳號/answer-book.git
-git push -u origin main
+網站網址：**https://timmmmy0922.github.io/answer-book/**
+
+這個網址是全世界的。手機用行動網路、別人在別的國家、對方什麼都不用裝，打開就能用。資料統一進同一個 Supabase，你在同一個後台看到所有人的提問。
+
+**運作方式**：`.github/workflows/deploy.yml`。每次你 `git push` 到 `main`，GitHub 會自動重新建置並發佈，一到兩分鐘後生效，網址不變。
+
+**為什麼是靜態匯出**：GitHub Pages 只放靜態檔案，所以 workflow 裡會把 `GITHUB_PAGES=true`，`next.config.mjs` 偵測到這個變數才會打開 `output: "export"` 並把 `basePath` 設成 `/answer-book`（因為網址帶子路徑）。**本機開發不受影響**，`npm run dev` 依然是 `http://localhost:3000`。
+
+**那兩個環境變數放在哪**：不在 `.env.local`，而是在 GitHub repo 的 Actions variables 裡：
+
+```
+gh variable list --repo 你的帳號/answer-book
 ```
 
-### 6-2 匯入 Vercel
+要改就 `gh variable set 變數名 --body "值" --repo 你的帳號/answer-book`，然後重新跑一次 workflow（或 push 一個 commit）。
+
+### 6-2 日常更新流程
+
+```bash
+git add -A
+git commit -m "改了什麼"
+git push
+```
+
+推上去就自動重新部署。想看這次跑得怎樣：
+
+```bash
+gh run list --limit 3
+gh run watch
+```
+
+### 6-3 想換成 Vercel（可選）
+
+GitHub Pages 的網址帶一個 `/answer-book/` 子路徑。如果你想要更乾淨的 `https://answer-book-xxx.vercel.app` 或綁自己的網域，可以另外接到 Vercel——兩邊可以並存，不衝突：
 
 1. 到 <https://vercel.com> 用 GitHub 帳號登入。
-2. **Add New… → Project** → 選剛剛那個 repo → **Import**。
+2. **Add New… → Project** → 選 `answer-book` → **Import**。
 3. Framework 會自動認出 **Next.js**，Build Command、Output Directory 都不用改。
 4. 展開 **Environment Variables**，加兩條（名字一字不差）：
 
    | Name | Value |
    | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://你的專案代號.supabase.co` |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 你的 anon public key |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 你的 publishable / anon key |
 
    **三個環境（Production / Preview / Development）都勾。**
-5. 按 **Deploy**，等一分鐘，就會拿到一個 `https://xxx.vercel.app` 網址。
+5. 按 **Deploy**。
 
-之後每次 `git push`，Vercel 都會自動重新部署。
-
-> 不想用 GitHub 也可以：`npm i -g vercel`，然後在專案目錄跑 `vercel`，環境變數用 `vercel env add` 加。
+> ⚠️ 在 Vercel 上**不要**設 `GITHUB_PAGES=true`，那個變數是給 GitHub Pages 用的。Vercel 走正常的 Next.js 模式，網址是根目錄。
+>
+> 反過來說：`GITHUB_PAGES` 只存在於 workflow 裡，Vercel 從來不會看到它，所以不會打架。
 
 ---
 
